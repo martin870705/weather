@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0px;
+            padding: 0px;
+            background-color: skyblue;
+        }
+
+        header {
+            width: 100%;
+            height: 100px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: white;
+        }
+
+
+
+        main {
+            padding: 20px 0px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            padding: 20px;
+            width: 300px;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #fff;
+            border-radius: 15px;
+            background-color: rgb(35, 135, 160);
+        }
+
+        .fill-card{
+            width: 300px;
+            margin: 20px;
+        }
+
+        .btn {
+            height: 30px;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        img {
+            width: 50%;
+            height: 50%;
+        }
+
+        .none {
+            display: none;
+        }
+
+        p {
+            text-align: center;
+        }
+
+        .days{
+            width: 140px;
+            position: absolute;
+            right: 0px;
+            top: 150px;
+
+            
+        }
+
+        .day{
+            float: right;
+            width: 110px;
+            font-size: 20px;
+            margin: 20px 0px;
+            background-color: antiquewhite;
+            padding: 10px 0px 10px 10px;
+            text-align: center;
+            transition: 0.5s;
+            border-radius: 10px 0px 0px 10px;
+            cursor: pointer;
+        }
+        .day:hover{
+            width: 140px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="btn1 btn" onclick="tag('北部')">北部</div>
+        <div class="btn2 btn" onclick="tag('中部')">中部</div>
+        <div class="btn3 btn" onclick="tag('南部')">南部</div>
+        <div class="btn3 btn" onclick="tag('東部')">東部與離島</div>
+        <div class="btn4 btn" onclick="tag('全部')">全部</div>
+        <div class="days">
+            <div class="day1 day" onclick="day(0)">今日天氣</div>
+            <div class="day2 day" onclick="day(1)">未來12小時</div>
+            <div class="day3 day" onclick="day(2)">未來24小時</div>
+        </div>
+    </header>
+    <main>
+
+    </main>
+
+
+
+
+    <script>
+        let card_box = document.querySelector('main')
+        let city_id
+        let flag = 0//當天日期
+
+        function day(id){//日期切換
+            flag = id
+            tag('全部')
+        }
+        function tag(btn) {
+
+            card_box.innerHTML = ''//畫面先清空
+
+            if (btn == '北部') {
+                city_id = [1, 3, 4, 5, 7, 13, 18]
+            } else if (btn == '中部') {
+                city_id = [8, 9, 11, 14, 20]
+            } else if (btn == '南部') {
+                city_id = [0, 2, 6, 15, 17, 19]
+            } else if (btn == '東部') {
+                city_id = [10, 12, 16, 21]
+            } else {
+                city_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+            }
+            
+            fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-4BDB057D-7FE3-4D7B-99D0-5B85B03A66E6')//去伺服器拿取資料
+                .then(function (respomse) {
+                    return respomse.json()//初始資料要先做處理  轉成json並回傳資料
+                }).then(function (datas) {//接收處理完的資料  開始使用
+
+                    let cards = datas.records.location//全部縣市資料
+
+                    for (let i = 0; i < city_id.length; i++) {
+                        //抓取資料內容
+                        let weather = cards[city_id[i]].weatherElement[0].time[flag].parameter.parameterName//天氣描述
+                        let weather_value = cards[city_id[i]].weatherElement[0].time[flag].parameter.parameterValue//天氣描述編號
+                        let time_start = cards[city_id[i]].weatherElement[0].time[flag].startTime//日期開始時間
+                        let time_end = cards[city_id[i]].weatherElement[0].time[flag].endTime//日期結束時間
+                        let temp_down = cards[city_id[i]].weatherElement[2].time[flag].parameter.parameterName//最低溫度
+                        let temp_high = cards[city_id[i]].weatherElement[4].time[flag].parameter.parameterName//最高溫度
+
+                        if (weather_value <= 9) {//圖片例外處理
+                            weather_value = '0' + weather_value
+                        }
+
+
+                        if (Number(time_start.substring(11, 13)) >= 18){//圖片判斷
+                            img = `https://www.cwb.gov.tw/V8/assets/img/weather_icons/weathers/svg_icon/night/${weather_value}.svg`
+                        }else{
+                            img = `https://www.cwb.gov.tw/V8/assets/img/weather_icons/weathers/svg_icon/day/${weather_value}.svg`
+                        }
+
+                        //將內容放入卡片放到網頁
+                        card_box.innerHTML += `
+                        <div class="card">
+                            <img src="${img}" alt="">
+                            <h1>${cards[city_id[i]].locationName}</h1>
+                            <p>${time_start.substr(0, 16)}<br>到<br>${time_end.substr(0, 16)}</p>
+                            <p>${weather}</p>
+                            <p>氣溫:${temp_down}°C~${temp_high}°C</p>
+                        </div>
+                        `
+                    }
+                    for(let i = 0 ; i < 4 ; i++){//為了畫面整齊放入空卡片
+                        card_box.innerHTML += `
+                        <div class="fill-card"></div>
+                        `
+                    }
+                })
+        }
+        tag('全部')
+
+
+
+
+    </script>
+</body>
+
+</html>
